@@ -1,0 +1,6 @@
+imports:
+  - path: /home/zhaolan/ariel-os
+    symlink: true
+
+apps:
+  - name: ariel-ml
