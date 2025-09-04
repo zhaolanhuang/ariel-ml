@@ -4,3 +4,5 @@ imports:
 
 apps:
   - name: ariel-ml
+    selects:
+      - alloc
