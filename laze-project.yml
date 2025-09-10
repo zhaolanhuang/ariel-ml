@@ -6,3 +6,10 @@ apps:
   - name: ariel-ml
     selects:
       - alloc
+      - lto
+      - opt_size
+    env:
+      global:
+        executor_stacksize_required:
+          - "16384"
+
