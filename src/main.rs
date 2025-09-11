@@ -11,6 +11,7 @@ use ariel_os::debug::{exit, log::info, println, ExitCode};
 // static MODEL_BYTECODE: &[u8] = include_bytes!("../resnet50.vmfb");
 
 use alloc::vec::Vec;
+#[cfg(feature = "resnet50")]
 fn run_resnet50(vmfb: &[u8], image_bin: &[f32]) -> Vec<f32> {
     use eerie::runtime;
     use eerie::runtime::vm::ToRef;
@@ -59,6 +60,7 @@ fn run_resnet50(vmfb: &[u8], image_bin: &[f32]) -> Vec<f32> {
     out
 }
 
+#[cfg(feature = "simple_mul")]
 fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {
     use eerie::runtime;
     use eerie::runtime::vm::ToRef;
@@ -149,18 +151,29 @@ async fn main() {
         "Hello from main()! Running on a {} board.",
         ariel_os::buildinfo::BOARD
     );
-    // let image_bin: [f32; 224*224*3] = [1.0; 224*224*3];
-    // static MODEL_BYTECODE: &[u8] = include_aligned!("../resnet50.vmfb", 16);
-    // info!("main, vmfb pointer: {:p}", MODEL_BYTECODE.as_ptr());
-    // let output = run_resnet50(&MODEL_BYTECODE, &image_bin);
 
-    static  MODEL_BYTECODE: &[u8] = include_aligned!("../simple_mul.vmfb", 64);
-    let a = [1.0, 2.0, 3.0, 4.0];
-    let b = [1.0, 2.0, 3.0, 4.0];
-    // info!("main, vmfb pointer: {:p}", MODEL_BYTECODE.as_ptr());
-    info!("main, vmfb[0]: {:x}", MODEL_BYTECODE[0]);
-    let output = run_simple_mul(&MODEL_BYTECODE, &a, &b);
+    #[cfg(feature = "resnet50")]
+    {
+        let image_bin: [f32; 224*224*3] = [1.0; 224*224*3];
+        static MODEL_BYTECODE: &[u8] = include_aligned!("../resnet50.vmfb", 16);
+        // info!("main, vmfb pointer: {:p}", MODEL_BYTECODE.as_ptr());
+        let output = run_resnet50(&MODEL_BYTECODE, &image_bin);
+        output.iter().for_each(|x| info!("output:{}", x));
+    }
 
-    output.iter().for_each(|x| info!("output:{}", x));
+    
+
+    #[cfg(feature = "simple_mul")]
+    {
+        static  MODEL_BYTECODE: &[u8] = include_aligned!("../simple_mul.vmfb", 16);
+        let a = [1.0, 2.0, 3.0, 4.0];
+        let b = [1.0, 2.0, 3.0, 4.0];
+        // info!("main, vmfb pointer: {:p}", MODEL_BYTECODE.as_ptr());
+        info!("main, vmfb[0]: {:x}", MODEL_BYTECODE[0]);
+        let output = run_simple_mul(&MODEL_BYTECODE, &a, &b);
+        output.iter().for_each(|x| info!("output:{}", x));
+
+    }
+   
     exit(ExitCode::SUCCESS);
 }
