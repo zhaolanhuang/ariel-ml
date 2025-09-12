@@ -7,6 +7,6 @@ edition = "2024"
 ariel-os = { path = "build/imports/ariel-os/src/ariel-os", features = [] }
 ariel-os-boards = { path = "build/imports/ariel-os/src/ariel-os-boards" }
 [features]
-default = ["resnet50"]
+default = []
 simple_mul = []
 resnet50 = []
