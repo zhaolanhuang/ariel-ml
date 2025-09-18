@@ -8,6 +8,7 @@ apps:
       - alloc
       - lto
       - opt_size
+      - log
     env:
       global:
         executor_stacksize_required:

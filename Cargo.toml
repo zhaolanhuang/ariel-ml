@@ -10,3 +10,5 @@ ariel-os-boards = { path = "build/imports/ariel-os/src/ariel-os-boards" }
 default = []
 simple_mul = []
 resnet50 = []
+static = []
+emitc = []

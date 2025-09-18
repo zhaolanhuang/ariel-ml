@@ -22,10 +22,8 @@ fn main() {
     let mut target_cpu = "";
 
     //TODO: add support for more cpus, and libm support for generic.
-    if context.contains("cortex-m4") {
+    if context.contains("cortex-m4f") || context.contains("cortex-m4") {
         target_cpu = "cortex-m4";
-    } else if context.contains("cortex-m4f") {
-        target_cpu = "cortex-m4f";
     } else {
         target_cpu = "generic";
     } 
@@ -33,51 +31,58 @@ fn main() {
     println!("cargo:warning=CARGO_CFG_CONTEXT {}",context);
     println!("cargo:warning=target_cpu {}",target_cpu);
 
+    
+    let mut iree_compile_flags: Vec<String> = vec![
+                "--iree-hal-target-device=local".into(),
+                "--iree-hal-local-target-device-backends=llvm-cpu".into(),
+                format!("--iree-llvmcpu-target-triple={}", target),
+                format!("--iree-llvmcpu-target-cpu={}", target_cpu),
+                // "--iree-llvmcpu-target-triple=armv7a-pc-linux-elf",
+                // "--iree-llvmcpu-target-cpu=cortex-m4",
+                "--iree-vm-bytecode-module-strip-source-map=true".into(),
+                "--iree-vm-emit-polyglot-zip=false".into(),
+                // "--iree-llvmcpu-keep-linker-artifacts",
+
+            ];
+
+    
+    
+    
+    let mut model_name = "no_model_selected";
     #[cfg(feature = "simple_mul")]
     {
-        println!("cargo::rerun-if-changed=simple_mul.mlir");
-        println!("cargo::rerun-if-changed=simple_mul.vmfb");
-        std::process::Command::new("iree-compile")
-            .args([
-                "--iree-hal-target-device=local",
-                "--iree-hal-local-target-device-backends=llvm-cpu",
-                format!("--iree-llvmcpu-target-triple={}", target).as_str(),
-                format!("--iree-llvmcpu-target-cpu={}", target_cpu).as_str(),
-                "--iree-vm-bytecode-module-strip-source-map=true",
-                "--iree-vm-emit-polyglot-zip=false",
-                "--iree-llvmcpu-debug-symbols=false",
-                // format!("--iree-llvmcpu-embedded-linker-path={}", IREE_LLD_BINARY).as_str(),
-                "simple_mul.mlir", 
-                "-o", "simple_mul.vmfb"
-            ])
-            .status()
-            .map_err(|e| format!("[IREE Model Compile] Failed to compile simple_mul, {}", e))
-            .unwrap();
-    }
-
+        model_name = "simple_mul";
+    }    
 
     #[cfg(feature = "resnet50")]
     {
-        println!("cargo::rerun-if-changed=resnet50.mlir");
-        println!("cargo::rerun-if-changed=resnet50.vmfb");
-        std::process::Command::new("iree-compile")
-            .args([
-                "--iree-input-type=stablehlo",
-                "--iree-hal-target-device=local",
-                "--iree-hal-local-target-device-backends=llvm-cpu",
-                format!("--iree-llvmcpu-target-triple={}", target).as_str(),
-                format!("--iree-llvmcpu-target-cpu={}", target_cpu).as_str(),
-                "--iree-vm-bytecode-module-strip-source-map=true",
-                "--iree-vm-emit-polyglot-zip=false",
-                "--iree-llvmcpu-debug-symbols=false",
-                // format!("--iree-llvmcpu-embedded-linker-path={}", IREE_LLD_BINARY).as_str(),
-                "resnet50.mlir", 
-                "-o", "resnet50.vmfb"
-            ])
-            .status()
-            .map_err(|e| format!("[IREE Model Compile] Failed to compile resnet50, {}", e))
-            .unwrap();
+        model_name = "resnet50";
     }
+    
+
+    println!("cargo::rerun-if-changed={}.mlir", model_name);
+    // println!("cargo::rerun-if-changed={}.vmfb", model_name);
+
+
+    #[cfg(feature = "static")] 
+    {
+        iree_compile_flags.push("--iree-llvmcpu-link-embedded=false".into());
+        iree_compile_flags.push("--iree-llvmcpu-link-static".into());
+        iree_compile_flags.push(format!("--iree-llvmcpu-static-library-output-path={}", model_name.to_string() + ".o"));
+        println!("cargo:rustc-link-arg={}", model_name.to_string() + ".o");
+    }
+    
+    iree_compile_flags.push("--dump-compilation-phases-to=build/iree".into());
+
+    iree_compile_flags.extend(vec![
+        model_name.to_string()  + ".mlir", 
+        "-o".into(), model_name.to_string()  + ".vmfb",
+    ]);
+    std::process::Command::new("iree-compile")
+        .args(iree_compile_flags)
+        .status()
+        .map_err(|e| format!("[IREE Model Compile] Failed to compile {}, {}", model_name, e))
+        .unwrap();
 
     
 }
