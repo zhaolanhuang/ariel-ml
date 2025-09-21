@@ -1,5 +1,7 @@
 #![no_main]
 #![no_std]
+#[cfg(all(feature = "simple_mul", feature = "emitc"))]
+use eerie::eerie_sys::runtime::iree_status_t;
 use eerie::runtime::{
     hal::{BufferMapping, BufferView},
     vm::List,
@@ -67,6 +69,17 @@ unsafe extern "C" {
     fn simple_mul_dispatch_0_library_query(max_version: sys::iree_hal_executable_library_version_t , 
         environment: *const sys::iree_hal_executable_environment_v0_t) -> *mut *const sys::iree_hal_executable_library_header_t;
 }
+
+#[cfg(all(feature = "simple_mul", feature = "emitc"))]
+unsafe extern "C" {
+    fn module_create(v1: *const sys::iree_vm_instance_t , v2: sys::iree_allocator_t,
+        v3: *mut *mut sys::iree_vm_module_t) -> iree_status_t;
+}
+
+// #[cfg(all(feature = "simple_mul", feature = "emitc"))]
+
+// fn module_create_emitc(instance: eerie::runtime::api::Instance, 
+//     allocator: &eerie::base::Allocator) -> Result<>
 
 #[cfg(all(feature = "simple_mul", feature = "static"))]
 fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {

@@ -3,11 +3,17 @@ name = "ariel-ml"
 version = "0.1.0"
 edition = "2024"
 
+[build-dependencies]
+cc = "1.0.90"
+
 [dependencies]
 ariel-os = { path = "build/imports/ariel-os/src/ariel-os", features = [] }
 ariel-os-boards = { path = "build/imports/ariel-os/src/ariel-os-boards" }
+eerie = { path = "/home/zhaolan/eerie", features = ["runtime"], default-features = false}
+
+
 [features]
-default = []
+default = ["simple_mul", "static"]
 simple_mul = []
 resnet50 = []
 static = []

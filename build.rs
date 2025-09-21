@@ -1,3 +1,5 @@
+use cc;
+
 fn main() {
     // Rerun if target changes
     println!("cargo:rerun-if-env-changed=TARGET");
@@ -71,18 +73,43 @@ fn main() {
         iree_compile_flags.push(format!("--iree-llvmcpu-static-library-output-path={}", model_name.to_string() + ".o"));
         println!("cargo:rustc-link-arg={}", model_name.to_string() + ".o");
     }
+
+    #[cfg(feature = "emitc")]
+    {
+        iree_compile_flags.push("--output-format=vm-c".into());
+    }
     
     iree_compile_flags.push("--dump-compilation-phases-to=build/iree".into());
 
+    #[cfg(not(feature= "emitc"))]
     iree_compile_flags.extend(vec![
         model_name.to_string()  + ".mlir", 
         "-o".into(), model_name.to_string()  + ".vmfb",
     ]);
+
+    #[cfg(feature= "emitc")]
+    iree_compile_flags.extend(vec![
+        model_name.to_string()  + ".mlir", 
+        "-o".into(), model_name.to_string()  + "_emitc.c",
+    ]);
+    
+
     std::process::Command::new("iree-compile")
         .args(iree_compile_flags)
         .status()
         .map_err(|e| format!("[IREE Model Compile] Failed to compile {}, {}", model_name, e))
         .unwrap();
+
+    #[cfg(feature= "emitc")]
+    {
+        let mut c_build = cc::Build::new();
+        let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
+        c_build.file(model_name.to_string()  + "_emitc.c")
+               .include(include_dir);
+        let obj_files = c_build.compile_intermediates();
+        obj_files.iter().for_each(|x|  println!("cargo:rustc-link-arg={}", x.display()) );
+
+    }
 
     
 }
