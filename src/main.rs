@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 #[cfg(all(feature = "simple_mul", feature = "emitc"))]
-use eerie::eerie_sys::runtime::iree_status_t;
+use eerie::{eerie_sys::runtime::iree_status_t, runtime::error::RuntimeError};
 use eerie::runtime::{
     hal::{BufferMapping, BufferView},
     vm::List,
@@ -9,6 +9,9 @@ use eerie::runtime::{
 use eerie::eerie_sys::runtime::{self as sys};
 extern crate alloc;
 use ariel_os::debug::{exit, log::info, println, ExitCode};
+use eerie::runtime;
+use eerie::runtime::base;
+use eerie::runtime::vm::ToRef;
 
 mod static_library_loader;
 
@@ -75,16 +78,20 @@ unsafe extern "C" {
     fn module_create(v1: *const sys::iree_vm_instance_t , v2: sys::iree_allocator_t,
         v3: *mut *mut sys::iree_vm_module_t) -> iree_status_t;
 }
-
-// #[cfg(all(feature = "simple_mul", feature = "emitc"))]
-
-// fn module_create_emitc(instance: eerie::runtime::api::Instance, 
-//     allocator: &eerie::base::Allocator) -> Result<>
+#[cfg(all(feature = "simple_mul", feature = "emitc"))]
+unsafe fn module_create_emitc(instance: &eerie::runtime::api::Instance, 
+    allocator: &runtime::base::Allocator) -> Result<*mut sys::iree_vm_module_t, RuntimeError> {
+        let mut out_vm_module  = core::ptr::null_mut();
+        base::Status::from_raw(unsafe { module_create(sys::iree_runtime_instance_vm_instance(instance.ctx), allocator.ctx, 
+                                             &mut out_vm_module as *mut *mut sys::iree_vm_module_t)
+                            })
+                            .to_result()
+                            .map_err(RuntimeError::StatusError)?;
+        Ok(out_vm_module)
+}
 
 #[cfg(all(feature = "simple_mul", feature = "static"))]
 fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {
-    use eerie::runtime;
-    use eerie::runtime::vm::ToRef;
     info!("run_simple_mul: use static library!");
 
     let instance = runtime::api::Instance::new(
@@ -101,10 +108,23 @@ fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {
         &device,
     )
     .unwrap();
-    // info!("run_simple_mul, vmfb pointer: {:p}", vmfb.as_ptr());
-    info!("run_simple_mul, vmfb[0]: {:x}", vmfb[0]);
-    unsafe { session.append_module_from_memory(vmfb) }.unwrap();
-    info!("run_simple_mul, module append successful!");
+    
+    #[cfg(not(feature = "emitc"))]
+    {
+        // info!("run_simple_mul, vmfb pointer: {:p}", vmfb.as_ptr());
+        info!("run_simple_mul, vmfb[0]: {:x}", vmfb[0]);
+        unsafe { session.append_module_from_memory(vmfb) }.unwrap();
+        info!("run_simple_mul, vmfb module append successful!");
+    }
+
+    #[cfg(feature = "emitc")]
+    {
+        let module = unsafe { module_create_emitc(&instance, &base::Allocator::get_global())}.unwrap();
+        unsafe { session.append_module(module.as_mut().unwrap()) }.unwrap();
+        info!("run_simple_mul, emitc module append successful!");
+    }
+
+    
     let function = session.lookup_function("module.simple_mul").unwrap();
     info!("run_simple_mul, function lookup successful!");
     
@@ -149,7 +169,7 @@ fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {
     out
 }
 
-#[cfg(all(feature = "simple_mul", not(feature = "static")))]
+#[cfg(all(feature = "simple_mul", not(feature = "static"), not(feature = "emitc")))]
 fn run_simple_mul(vmfb: &[u8], a: &[f32], b: &[f32]) -> Vec<f32> {
     use eerie::runtime;
     use eerie::runtime::vm::ToRef;

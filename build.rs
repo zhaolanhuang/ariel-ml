@@ -105,7 +105,12 @@ fn main() {
         let mut c_build = cc::Build::new();
         let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
         c_build.file(model_name.to_string()  + "_emitc.c")
-               .include(include_dir);
+               .include(include_dir)
+               .define("EMITC_IMPLEMENTATION", None)
+               .flags(vec![              
+                "-DIREE_PLATFORM_GENERIC=1",
+                ]);
+               
         let obj_files = c_build.compile_intermediates();
         obj_files.iter().for_each(|x|  println!("cargo:rustc-link-arg={}", x.display()) );
 

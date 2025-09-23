@@ -13,7 +13,7 @@ eerie = { path = "/home/zhaolan/eerie", features = ["runtime"], default-features
 
 
 [features]
-default = ["simple_mul", "static"]
+default = ["simple_mul", "emitc", "static"]
 simple_mul = []
 resnet50 = []
 static = []
