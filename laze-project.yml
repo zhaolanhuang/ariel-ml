@@ -8,10 +8,11 @@ apps:
       - alloc
       - lto
       - opt_size
-      - log
-      # - cross-language-lto
+      # - log
+      - cross-language-lto
     env:
       global:
         executor_stacksize_required:
+          # - "9000"
           - "16384"
 

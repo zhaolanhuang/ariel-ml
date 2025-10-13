@@ -51,19 +51,46 @@ fn main() {
     
     
     let mut model_name = "no_model_selected";
+    let mut query_fn_name = "no_fn_func";
     #[cfg(feature = "simple_mul")]
     {
         model_name = "simple_mul";
+        query_fn_name = "simple_mul_dispatch_0_library_query";
     }    
 
     #[cfg(feature = "resnet50")]
     {
         model_name = "resnet50";
     }
+
+    #[cfg(feature = "mnist")]
+    {
+        model_name = "mnist";
+        query_fn_name = "mnist_linked_library_query";
+        
+    }
+
+    #[cfg(feature = "lenet5")]
+    {
+        #[cfg(feature = "quantized")]
+        {
+            model_name = "lenet5_quantized";
+        }
+
+        #[cfg(not(feature = "quantized"))]
+        {
+            model_name = "lenet5_float";
+        }
+        
+        query_fn_name = "module_linked_library_query";
+        
+    }
+    println!("cargo:rustc-env=IREE_LIB_QUERY_FN_NAME={}", query_fn_name);
     
 
     println!("cargo::rerun-if-changed={}.mlir", model_name);
-    // println!("cargo::rerun-if-changed={}.vmfb", model_name);
+    println!("cargo::rerun-if-changed={}.vmfb", model_name);
+    println!("cargo::rerun-if-changed={}.o", model_name);
 
 
     #[cfg(feature = "static")] 

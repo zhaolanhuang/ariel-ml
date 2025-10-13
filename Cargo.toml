@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [build-dependencies]
-cc = "1.0.90"
+# cc = "1.0.90"
+cc = "=1.2.38"
+# cmake = "0.1.54"
 
 [dependencies]
 ariel-os = { path = "build/imports/ariel-os/src/ariel-os", features = [] }
@@ -13,8 +15,11 @@ eerie = { path = "/home/zhaolan/eerie", features = ["runtime"], default-features
 
 
 [features]
-default = ["simple_mul", "emitc", "static"]
+default = ["lenet5", "static", "quantized"]
+mnist = []
 simple_mul = []
 resnet50 = []
 static = []
 emitc = []
+lenet5 = []
+quantized = []
