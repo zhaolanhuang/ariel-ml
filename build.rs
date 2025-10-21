@@ -143,5 +143,20 @@ fn main() {
 
     }
 
+    #[cfg(feature= "multicore")]
+    {
+        let mut c_build = cc::Build::new();
+        let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
+        c_build.file("contrib/iree_workgroup_dispatch.c")
+               .include(include_dir)
+               .flags(vec![              
+                "-DIREE_PLATFORM_GENERIC=1",
+                ]);
+               
+        let obj_files = c_build.compile_intermediates();
+        obj_files.iter().for_each(|x|  println!("cargo:rustc-link-arg={}", x.display()) );
+
+    }
+
     
 }
