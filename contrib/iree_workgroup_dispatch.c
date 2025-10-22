@@ -110,6 +110,8 @@ iree_status_t iree_hal_local_executable_issue_dispatch_inline(
 
         job_states[i].status = iree_ok_status();
 
+        defer_job(exec_dispatch_job, &job_states[i]);
+
         i++;
 
       }
