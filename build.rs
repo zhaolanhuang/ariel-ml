@@ -145,6 +145,7 @@ fn main() {
 
     #[cfg(feature= "multicore")]
     {
+        println!("cargo::rerun-if-changed=contrib/iree_workgroup_dispatch.c");
         let mut c_build = cc::Build::new();
         let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
         c_build.file("contrib/iree_workgroup_dispatch.c")

@@ -10,9 +10,10 @@ apps:
       - opt_size
       # - log
       - cross-language-lto
-    env:
-      global:
-        executor_stacksize_required:
-          # - "9000"
-          - "16384"
+      - sw/threading
+#    env:
+#      global:
+#        executor_stacksize_required:
+#          # - "9000"
+#          - "16384"
 

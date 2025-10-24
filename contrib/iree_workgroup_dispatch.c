@@ -30,9 +30,13 @@ typedef struct job_state {
     iree_status_t status;
 } job_state_t;
 
-void defer_job(job_fn_ptr job_fn, void* job_arg) {
-    job_fn(job_arg);
-}
+extern void defer_job(job_fn_ptr job_fn, void* job_arg);
+extern void wait_job_done();
+extern void set_job_num(size_t num);
+
+//void defer_job(job_fn_ptr job_fn, void* job_arg) {
+//    job_fn(job_arg);
+//}
 
 void mutex_lock(mutex_t* mutex) {
     //dummy func;
@@ -83,7 +87,7 @@ iree_status_t iree_hal_local_executable_issue_dispatch_inline(
 //   };
 
   int i = 0;
-
+  set_job_num((workgroup_count_z+1)*(workgroup_count_y+1)*(workgroup_count_x+1));
   for (uint32_t z = 0; z < workgroup_count_z; ++z) {
     // workgroup_state.workgroup_id_z = z;
     for (uint32_t y = 0; y < workgroup_count_y; ++y) {
@@ -117,9 +121,9 @@ iree_status_t iree_hal_local_executable_issue_dispatch_inline(
       }
     }
   }
-
+  wait_job_done();
   for (int j = 0; j < i; j++) {
-    mutex_lock(&job_states[j].done);
+//    mutex_lock(&job_states[j].done);
     status = job_states[j].status;
     if (!iree_status_is_ok(status)) break;
   }

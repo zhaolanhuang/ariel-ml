@@ -20,6 +20,9 @@ mod dummy_c_symbols;
 
 mod iree_threading;
 
+mod utils;
+
+mod workqueue;
 // static MODEL_BYTECODE: &[u8] = include_bytes!("../resnet50.vmfb");
 
 #[cfg(feature = "emitc")]
@@ -317,7 +320,7 @@ fn run_lenet5_float(vmfb: &[u8], a: &[f32]) -> Vec<f32> {
     .unwrap();
     let f : sys::iree_hal_executable_library_query_fn_t = Some(ptr_iree_lib_query_fn::iree_lib_query_fn);
     let libraries  = [f];
-    let device = static_library_loader::create_local_task_device_with_static_loader(libraries.as_slice()).unwrap();
+    let device = static_library_loader::create_local_sync_device_with_static_loader(libraries.as_slice()).unwrap();
     let session = runtime::api::Session::create_with_device(
         &instance,
         &runtime::api::SessionOptions::default(),
@@ -399,8 +402,9 @@ macro_rules! include_aligned {
 
 // use align_data::{include_aligned, Align64, Align16};
 
-#[ariel_os::task(autostart)]
-async fn main() {
+
+#[ariel_os::thread(autostart, stacksize = 16384)]
+fn main() {
     info!(
         "Hello from main()! Running on a {} board.",
         ariel_os::buildinfo::BOARD
