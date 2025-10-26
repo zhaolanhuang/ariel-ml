@@ -3,30 +3,38 @@
 
 use ariel_os::debug::log::*;
 use ariel_os::thread::sync::Channel;
+use ariel_os::thread::sync::Mutex;
 
-//static WORK_QUEUE: Channel<Job> = Channel::new();
-static WORK_QUEUE: Channel<usize> = Channel::new();
+static WORK_QUEUE: Channel<Job> = Channel::new();
 
 use portable_atomic::{AtomicUsize, Ordering};
 
 static JOB_REMAINING: AtomicUsize = AtomicUsize::new(0);
 
 #[unsafe(no_mangle)]
-extern "C" fn set_job_num(num: usize) {
+pub extern "C" fn print_current_workgroup(x: usize, y: usize, z: usize) {
+    info!("Current workgroup ({},{},{})", x, y, z);
+}
 
-    JOB_REMAINING.store(num, Ordering::Relaxed);
+#[unsafe(no_mangle)]
+pub extern "C" fn set_job_num(num: usize) {
+    info!("set job num: {}", num);
+    JOB_REMAINING.store(num, Ordering::SeqCst);
 
 }
 
 #[unsafe(no_mangle)]
-extern "C" fn wait_job_done() {
+pub extern "C" fn wait_job_done() {
+    info!("enter into wait job done func.");
     loop {
-       let remaining = JOB_REMAINING.load(Ordering::Relaxed);
-       if remaining > 0 {
-            info!("remaining {} jobs.", remaining);
-            ariel_os::thread::yield_same();
-       } else {
-            break;       
+       let remaining = JOB_REMAINING.load(Ordering::SeqCst);
+        {
+        if remaining > 0 {
+
+                ariel_os::thread::yield_same();
+        } else {
+                return;       
+            }
         }
     }
     
@@ -45,12 +53,12 @@ extern "C" fn some_job(arg: usize) {
 //    defer_job(job.func, job.arg);
 //}
 
-#[ariel_os::thread(autostart)]
+#[ariel_os::thread(autostart, priority = 1)]
 fn thread0() {
     worker();
 }
 
-#[ariel_os::thread(autostart)]
+#[ariel_os::thread(autostart, priority = 1)]
 fn thread1() {
     worker();
 }
@@ -65,7 +73,9 @@ struct Job {
 #[unsafe(no_mangle)]
 pub extern "C" fn defer_job(func: extern "C" fn(usize), arg: usize) {
     info!("deferring job, func: {:?}, arg: {:?}", func, arg);
-    WORK_QUEUE.send(&arg);
+
+    WORK_QUEUE.send(&Job {func, arg});
+    
     info!("deferring job done, func: {:?}, arg: {:?}", func, arg);
 }
 
@@ -74,9 +84,10 @@ fn worker() {
     loop {
         info!("[{:?}] Waiting for job...", my_id);
         let job = WORK_QUEUE.recv();
-        info!("[{:?}] Waiting got job, arg {:?}, executing", my_id, job);
-//        (job.func)(job.arg);
+        info!("[{:?}] Waiting got job, arg {:?}, executing", my_id, job.arg);
+       (job.func)(job.arg);
         info!("[{:?}] Job done.", my_id);
-        JOB_REMAINING.fetch_sub(1, Ordering::Relaxed);
+
+        JOB_REMAINING.fetch_sub(1, Ordering::SeqCst);
     }
 }
