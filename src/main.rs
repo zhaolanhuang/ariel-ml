@@ -18,9 +18,9 @@ mod ptr_iree_lib_query_fn;
 
 mod dummy_c_symbols;
 
-mod iree_threading;
+// mod iree_threading;
 
-mod utils;
+// mod utils;
 
 mod workqueue;
 // static MODEL_BYTECODE: &[u8] = include_bytes!("../resnet50.vmfb");
@@ -403,7 +403,7 @@ macro_rules! include_aligned {
 // use align_data::{include_aligned, Align64, Align16};
 
 
-#[ariel_os::thread(autostart, stacksize = 16384)]
+#[ariel_os::thread(autostart, stacksize = 16384, priority = 1)]
 fn main() {
     info!(
         "Hello from main()! Running on a {} board.",

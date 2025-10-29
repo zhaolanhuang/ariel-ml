@@ -81,12 +81,13 @@ pub extern "C" fn defer_job(func: extern "C" fn(usize), arg: usize) {
 
 fn worker() {
     let my_id = ariel_os::thread::current_tid().unwrap();
+    let core = ariel_os::thread::core_id();
     loop {
-        info!("[{:?}] Waiting for job...", my_id);
+        info!("[{:?}] [{:?}] Waiting for job...", core, my_id);
         let job = WORK_QUEUE.recv();
-        info!("[{:?}] Waiting got job, arg {:?}, executing", my_id, job.arg);
+        info!("[{:?}] [{:?}] Waiting got job, arg {:?}, executing", core, my_id, job.arg);
        (job.func)(job.arg);
-        info!("[{:?}] Job done.", my_id);
+        info!("[{:?}] [{:?}] Job done.", core, my_id);
 
         JOB_REMAINING.fetch_sub(1, Ordering::SeqCst);
     }

@@ -26,9 +26,11 @@ fn main() {
     //TODO: add support for more cpus, and libm support for generic.
     if context.contains("cortex-m4f") || context.contains("cortex-m4") {
         target_cpu = "cortex-m4";
+    } else if context.contains("cortex-m0-plus") || context.contains("cortex-m0") {
+        target_cpu = "cortex-m0";
     } else {
         target_cpu = "generic";
-    } 
+    }
     
     println!("cargo:warning=CARGO_CFG_CONTEXT {}",context);
     println!("cargo:warning=target_cpu {}",target_cpu);
@@ -39,6 +41,7 @@ fn main() {
                 "--iree-hal-local-target-device-backends=llvm-cpu".into(),
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
+                "--iree-llvmcpu-target-float-abi=soft".into(),
                 // "--iree-llvmcpu-target-triple=armv7a-pc-linux-elf",
                 // "--iree-llvmcpu-target-cpu=cortex-m4",
                 "--iree-vm-bytecode-module-strip-source-map=true".into(),

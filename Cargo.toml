@@ -9,9 +9,7 @@ cc = "=1.2.38"
 # cmake = "0.1.54"
 
 [dependencies]
-portable-atomic = { version = "1.11.0", default-features = false, features = [
-  "require-cas",
-] }
+portable-atomic = { version = "1", default-features = false }
 ariel-os = { path = "build/imports/ariel-os/src/ariel-os", features = [] }
 ariel-os-boards = { path = "build/imports/ariel-os/src/ariel-os-boards" }
 eerie = { path = "/home/zhaolan/eerie", features = ["runtime"], default-features = false}
