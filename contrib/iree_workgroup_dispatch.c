@@ -68,6 +68,9 @@ void exec_dispatch_job(void* arg) {
 #define N_JOBS 64
 job_state_t job_states[N_JOBS] = {0};
 
+extern void begin_record_op_latency();
+extern void end_record_op_latency();
+
 iree_status_t iree_hal_local_executable_issue_dispatch_inline(
     iree_hal_local_executable_t* executable, iree_host_size_t ordinal,
     const iree_hal_executable_dispatch_state_v0_t* dispatch_state,
@@ -89,6 +92,7 @@ iree_status_t iree_hal_local_executable_issue_dispatch_inline(
 //   };
 
   int i = 0;
+  begin_record_op_latency();
   set_job_num((workgroup_count_z)*(workgroup_count_y)*(workgroup_count_x));
   for (uint32_t z = 0; z < workgroup_count_z; ++z) {
     // workgroup_state.workgroup_id_z = z;
@@ -124,7 +128,7 @@ iree_status_t iree_hal_local_executable_issue_dispatch_inline(
     }
   }
   wait_job_done();
-  
+  end_record_op_latency();
   for (int j = 0; j < i; j++) {
 
     status = job_states[j].status;

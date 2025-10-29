@@ -23,6 +23,7 @@ mod dummy_c_symbols;
 // mod utils;
 
 mod workqueue;
+use workqueue::print_ops_latency;
 // static MODEL_BYTECODE: &[u8] = include_bytes!("../resnet50.vmfb");
 
 #[cfg(feature = "emitc")]
@@ -371,7 +372,10 @@ fn run_lenet5_float(vmfb: &[u8], a: &[f32]) -> Vec<f32> {
         )
         .unwrap();
     info!("run_lenet5_float, ready for function invoke!");
+    let time_begin_us = time::Instant::now().as_micros();
     function.invoke(&input_list, &output_list).unwrap();
+    let time_end_us = time::Instant::now().as_micros();
+    info!("LeNet 5 func invoke time: {:?} us", time_end_us - time_begin_us);
     info!("run_lenet5_float, function invoke successful!");
     let output_buffer_ref = output_list.get_ref(0).unwrap();
     let output_buffer: BufferView<f32> = output_buffer_ref.to_buffer_view(&session);
@@ -401,7 +405,7 @@ macro_rules! include_aligned {
 }
 
 // use align_data::{include_aligned, Align64, Align16};
-
+use ariel_os::time;
 
 #[ariel_os::thread(autostart, stacksize = 16384, priority = 1)]
 fn main() {
@@ -461,8 +465,12 @@ fn main() {
 //        }
 //        
         // info!("main, vmfb pointer: {:p}", MODEL_BYTECODE.as_ptr());
+        let time_begin_us = time::Instant::now().as_micros();
         let output = run_lenet5_float(&MODEL_BYTECODE, &image_bin);
+        let time_end_us = time::Instant::now().as_micros();
         output.iter().for_each(|x| info!("output:{}", x));
+        info!("LeNet 5 inference time: {:?} us", time_end_us - time_begin_us);
+        print_ops_latency();
     }
    
     exit(ExitCode::SUCCESS);

@@ -45,6 +45,7 @@ dependencies = [
  "ariel-os-buildinfo",
  "ariel-os-debug",
  "ariel-os-embassy",
+ "ariel-os-hal",
  "ariel-os-identity",
  "ariel-os-macros",
  "ariel-os-power",
@@ -67,7 +68,12 @@ dependencies = [
 
 [[package]]
 name = "ariel-os-boards"
-version = "0.2.0"
+version = "0.0.0"
+dependencies = [
+ "ariel-os-embassy-common",
+ "ariel-os-hal",
+ "cfg-if",
+]
 
 [[package]]
 name = "ariel-os-buildinfo"
@@ -98,6 +104,7 @@ dependencies = [
 name = "ariel-os-embassy"
 version = "0.2.0"
 dependencies = [
+ "ariel-os-boards",
  "ariel-os-buildinfo",
  "ariel-os-debug",
  "ariel-os-embassy-common",
@@ -115,6 +122,7 @@ dependencies = [
  "embassy-nrf",
  "embassy-stm32",
  "embassy-sync 0.6.2",
+ "embassy-time",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "embedded-io",
@@ -133,7 +141,6 @@ dependencies = [
  "ariel-os-buildinfo",
  "ariel-os-utils",
  "const-sha1",
- "embassy-futures",
  "embassy-time",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
@@ -169,6 +176,7 @@ dependencies = [
  "ariel-os-rp",
  "ariel-os-stm32",
  "cfg-if",
+ "const_panic",
  "embassy-executor",
  "embassy-hal-internal",
  "embassy-usb",
@@ -537,9 +545,9 @@ checksum = "0d8a42181e0652c2997ae4d217f25b63c5337a52fd2279736e97b832fa0a3cff"
 
 [[package]]
 name = "const-str"
-version = "0.6.4"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "451d0640545a0553814b4c646eb549343561618838e9b42495f466131fe3ad49"
+checksum = "f4d34b8f066904ed7cfa4a6f9ee96c3214aa998cb44b69ca20bd2054f47402ed"
 
 [[package]]
 name = "const_panic"
@@ -1243,6 +1251,7 @@ dependencies = [
  "esp32",
  "esp32c3",
  "esp32c6",
+ "esp32s2",
  "esp32s3",
  "fugit",
  "instability",
@@ -1356,6 +1365,16 @@ name = "esp32c6"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd38a7771b65cb640cc4a79324a6301ba4ac3bf2987caca5d3aa34492238fdb9"
+dependencies = [
+ "critical-section",
+ "vcell",
+]
+
+[[package]]
+name = "esp32s2"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eb30ae371e72436629a70affedd1e3570829f16a3b718d6ec96508791d9da5e"
 dependencies = [
  "critical-section",
  "vcell",
@@ -2834,8 +2853,3 @@ source = "git+https://github.com/ariel-os/esp-hal?rev=aa8d1995fc06eb5e6d04a2022e
 name = "esp-wifi"
 version = "0.12.0"
 source = "git+https://github.com/ariel-os/esp-hal?rev=aa8d1995fc06eb5e6d04a2022ecf3679b4929e63#aa8d1995fc06eb5e6d04a2022ecf3679b4929e63"
-
-[[patch.unused]]
-name = "try-lock"
-version = "0.2.5"
-source = "git+https://github.com/seanmonstar/try-lock?rev=45c39685b56a4dba1b71bdbbbe5f731c3c77dc50#45c39685b56a4dba1b71bdbbbe5f731c3c77dc50"

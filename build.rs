@@ -41,7 +41,10 @@ fn main() {
                 "--iree-hal-local-target-device-backends=llvm-cpu".into(),
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
-                "--iree-llvmcpu-target-float-abi=soft".into(),
+                "--iree-stream-partitioning-favor=max-concurrency".into(),
+                "--enable-loop-distribute".into(),
+//                "--iree-llvmcpu-tile-dispatch-using-forall".into(),
+//                "--iree-llvmcpu-target-float-abi=soft".into(),
                 // "--iree-llvmcpu-target-triple=armv7a-pc-linux-elf",
                 // "--iree-llvmcpu-target-cpu=cortex-m4",
                 "--iree-vm-bytecode-module-strip-source-map=true".into(),
@@ -110,6 +113,8 @@ fn main() {
     }
     
     iree_compile_flags.push("--dump-compilation-phases-to=build/iree".into());
+    iree_compile_flags.push("--mlir-print-ir-after-all".into());
+    iree_compile_flags.push("--mlir-print-ir-tree-dir=build/iree".into());
 
     #[cfg(not(feature= "emitc"))]
     iree_compile_flags.extend(vec![
@@ -154,7 +159,7 @@ fn main() {
         c_build.file("contrib/iree_workgroup_dispatch.c")
                .include(include_dir)
                .flags(vec![              
-                "-DIREE_PLATFORM_GENERIC=1",
+                "-DIREE_PLATFORM_GENERIC=1", 
                 ]);
                
         let obj_files = c_build.compile_intermediates();
