@@ -16,7 +16,7 @@ pub fn create_local_sync_device_with_static_loader(libraries: &[sys::iree_hal_ex
         let mut params : sys::iree_hal_sync_device_params_t = Default::default();
         let ptr_params: *mut sys::iree_hal_sync_device_params_t = &mut params;
         unsafe {sys::iree_hal_sync_device_params_initialize(ptr_params); };
-        
+        info!("iree_hal_sync_device_params_initialize Success!");
         let null_import_provider: sys::iree_hal_executable_import_provider_t = Default::default();
         let mut out_executable_loader = core::ptr::null_mut();
         let host_allocator = base::Allocator::get_global().ctx;
@@ -26,6 +26,7 @@ pub fn create_local_sync_device_with_static_loader(libraries: &[sys::iree_hal_ex
                             })
                             .to_result()
                             .map_err(RuntimeError::StatusError)?;
+        info!("iree_hal_static_library_loader_create Success!");
         let identifier = "local-sync";
 
         let mut out_allocator  = core::ptr::null_mut();                            
@@ -34,7 +35,7 @@ pub fn create_local_sync_device_with_static_loader(libraries: &[sys::iree_hal_ex
                             })
                             .to_result()
                             .map_err(RuntimeError::StatusError)?;
-
+        info!("iree_hal_allocator_create_heap Success!");
         let mut out_device  = core::ptr::null_mut();
 
         base::Status::from_raw(unsafe { sys::iree_hal_sync_device_create(StringView::from(identifier).ctx, ptr_params, 
@@ -43,6 +44,7 @@ pub fn create_local_sync_device_with_static_loader(libraries: &[sys::iree_hal_ex
                             })
                             .to_result()
                             .map_err(RuntimeError::StatusError)?;
+        info!("iree_hal_sync_device_create Success!");
 
         unsafe {
             sys::iree_hal_allocator_release(out_allocator);

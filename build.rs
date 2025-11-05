@@ -1,4 +1,6 @@
 use cc;
+use std::path::PathBuf;
+
 
 fn main() {
     // Rerun if target changes
@@ -28,7 +30,10 @@ fn main() {
         target_cpu = "cortex-m4";
     } else if context.contains("cortex-m0-plus") || context.contains("cortex-m0") {
         target_cpu = "cortex-m0";
-    } else {
+    } else if context.contains("esp32s3") {
+//        target_cpu = "esp32";
+    }
+    else {
         target_cpu = "generic";
     }
     
@@ -41,8 +46,10 @@ fn main() {
                 "--iree-hal-local-target-device-backends=llvm-cpu".into(),
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
-                "--iree-stream-partitioning-favor=max-concurrency".into(),
-                "--enable-loop-distribute".into(),
+                "--align-all-functions=4".into(),
+                "--align-all-blocks=4".into(),
+//                "--iree-stream-partitioning-favor=max-concurrency".into(),
+//                "--enable-loop-distribute".into(),
 //                "--iree-llvmcpu-tile-dispatch-using-forall".into(),
 //                "--iree-llvmcpu-target-float-abi=soft".into(),
                 // "--iree-llvmcpu-target-triple=armv7a-pc-linux-elf",
@@ -88,7 +95,7 @@ fn main() {
             model_name = "lenet5_float";
         }
         
-        query_fn_name = "module_linked_library_query";
+        query_fn_name = "lenet5_quantized_linked_library_query";
         
     }
     println!("cargo:rustc-env=IREE_LIB_QUERY_FN_NAME={}", query_fn_name);
@@ -113,8 +120,11 @@ fn main() {
     }
     
     iree_compile_flags.push("--dump-compilation-phases-to=build/iree".into());
-    iree_compile_flags.push("--mlir-print-ir-after-all".into());
-    iree_compile_flags.push("--mlir-print-ir-tree-dir=build/iree".into());
+    iree_compile_flags.push("--iree-hal-dump-executable-files-to=build/iree".into());
+    iree_compile_flags.push("--mlir-pretty-debuginfo".into());
+//    iree_compile_flags.push("--debug-only=isel".into());
+//    iree_compile_flags.push("--mlir-print-ir-after-all".into());
+//    iree_compile_flags.push("--mlir-print-ir-tree-dir=build/iree".into());
 
     #[cfg(not(feature= "emitc"))]
     iree_compile_flags.extend(vec![
@@ -135,15 +145,21 @@ fn main() {
         .map_err(|e| format!("[IREE Model Compile] Failed to compile {}, {}", model_name, e))
         .unwrap();
 
+    let clang_path = PathBuf::from(std::env::var("CLANG_PATH").unwrap());
+    let target = std::env::var("TARGET").unwrap();
+    println!("cargo::warning= ariel ml target : {}", &target);
     #[cfg(feature= "emitc")]
     {
         let mut c_build = cc::Build::new();
-        let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
+        let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file(model_name.to_string()  + "_emitc.c")
+               .compiler(&clang_path)
+               .target(&target)
                .include(include_dir)
                .define("EMITC_IMPLEMENTATION", None)
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1",
+                "-fno-stack-protector",
                 ]);
                
         let obj_files = c_build.compile_intermediates();
@@ -155,11 +171,14 @@ fn main() {
     {
         println!("cargo::rerun-if-changed=contrib/iree_workgroup_dispatch.c");
         let mut c_build = cc::Build::new();
-        let include_dir = "/home/zhaolan/eerie/eerie-sys/iree/runtime/src"; //should avoid hardcode
+        let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file("contrib/iree_workgroup_dispatch.c")
+               .compiler(&clang_path)
+               .target(&target)
                .include(include_dir)
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1", 
+                "-fno-stack-protector", 
                 ]);
                
         let obj_files = c_build.compile_intermediates();

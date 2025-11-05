@@ -11,9 +11,9 @@ apps:
       # - log
       - cross-language-lto
       - sw/threading
-#      - multi-core
-    conflicts:
       - multi-core
+#    conflicts:
+#      - multi-core
 #    env:
 #      global:
 #        executor_stacksize_required:

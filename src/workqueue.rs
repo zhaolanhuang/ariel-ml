@@ -96,10 +96,10 @@ fn thread0() {
     worker();
 }
 
-//#[ariel_os::thread(autostart, priority = 1)]
-//fn thread1() {
-//    worker();
-//}
+#[ariel_os::thread(autostart, priority = 1)]
+fn thread1() {
+    worker();
+}
 
 #[derive(Copy, Clone)]
 #[repr(C)]
