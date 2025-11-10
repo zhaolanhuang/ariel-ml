@@ -7,7 +7,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=TARGET");
 
     // Read target triple
-    let target = std::env::var("TARGET").unwrap();
+    let mut target = std::env::var("TARGET").unwrap();
     println!("cargo:warning=Target triple = {}", target);
 
 
@@ -36,7 +36,11 @@ fn main() {
     else {
         target_cpu = "generic";
     }
-    
+    if (target == "riscv32imc-unknown-none-elf") {
+      //  target = "riscv32-unknown-none-elf".to_string();
+        target = "riscv32".to_string();
+        target_cpu = "generic-rv32";
+    }    
     println!("cargo:warning=CARGO_CFG_CONTEXT {}",context);
     println!("cargo:warning=target_cpu {}",target_cpu);
 
@@ -46,8 +50,10 @@ fn main() {
                 "--iree-hal-local-target-device-backends=llvm-cpu".into(),
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
+                "--iree-llvmcpu-target-cpu-features=+m,+a,+c".into(),
                 "--align-all-functions=4".into(),
                 "--align-all-blocks=4".into(),
+                "--iree-opt-level=O2".into(),
 //                "--iree-stream-partitioning-favor=max-concurrency".into(),
 //                "--enable-loop-distribute".into(),
 //                "--iree-llvmcpu-tile-dispatch-using-forall".into(),
@@ -145,7 +151,6 @@ fn main() {
         .map_err(|e| format!("[IREE Model Compile] Failed to compile {}, {}", model_name, e))
         .unwrap();
 
-    let clang_path = PathBuf::from(std::env::var("CLANG_PATH").unwrap());
     let target = std::env::var("TARGET").unwrap();
     println!("cargo::warning= ariel ml target : {}", &target);
     #[cfg(feature= "emitc")]
@@ -153,13 +158,12 @@ fn main() {
         let mut c_build = cc::Build::new();
         let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file(model_name.to_string()  + "_emitc.c")
-               .compiler(&clang_path)
                .target(&target)
                .include(include_dir)
+               .include("/home/zhaolan/riscv-gnu-toolchain/install-newlib-nano/riscv64-unknown-elf/include")
                .define("EMITC_IMPLEMENTATION", None)
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1",
-                "-fno-stack-protector",
                 ]);
                
         let obj_files = c_build.compile_intermediates();
@@ -173,12 +177,11 @@ fn main() {
         let mut c_build = cc::Build::new();
         let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file("contrib/iree_workgroup_dispatch.c")
-               .compiler(&clang_path)
                .target(&target)
                .include(include_dir)
+               .include("/home/zhaolan/riscv-gnu-toolchain/install-newlib-nano/riscv64-unknown-elf/include")
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1", 
-                "-fno-stack-protector", 
                 ]);
                
         let obj_files = c_build.compile_intermediates();

@@ -51,7 +51,7 @@ info!("op latency sum [{:?}]", sum_latency);
 
 #[unsafe(no_mangle)]
 pub extern "C" fn print_current_workgroup(x: usize, y: usize, z: usize) {
-//    info!("Current workgroup ({},{},{})", x, y, z);
+//   info!("Current workgroup ({},{},{})", x, y, z);
 }
 
 #[unsafe(no_mangle)]
