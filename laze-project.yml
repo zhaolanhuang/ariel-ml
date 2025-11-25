@@ -1,5 +1,5 @@
 imports:
-  - path: /home/zhaolan/ariel-os
+  - path: ../ariel-os
     symlink: true
 
 apps:
@@ -11,7 +11,7 @@ apps:
       # - log
       - cross-language-lto
       - sw/threading
-      - multi-core
+        #      - multi-core
 #    conflicts:
 #      - multi-core
 #    env:

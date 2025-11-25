@@ -24,10 +24,13 @@ fn main() {
     let context = std::env::var("CARGO_CFG_CONTEXT").unwrap();
 
     let mut target_cpu = "";
+    
+    let mut cpu_features = "";
 
     //TODO: add support for more cpus, and libm support for generic.
     if context.contains("cortex-m4f") || context.contains("cortex-m4") {
         target_cpu = "cortex-m4";
+        cpu_features = "+vfp4d16sp";
     } else if context.contains("cortex-m0-plus") || context.contains("cortex-m0") {
         target_cpu = "cortex-m0";
     } else if context.contains("esp32s3") {
@@ -46,8 +49,11 @@ fn main() {
                 "--iree-hal-local-target-device-backends=llvm-cpu".into(),
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
+                format!("--iree-llvmcpu-target-cpu-features={}", cpu_features),
+                "--iree-opt-level=O2".into(),
                 "--align-all-functions=4".into(),
                 "--align-all-blocks=4".into(),
+
 //                "--iree-stream-partitioning-favor=max-concurrency".into(),
 //                "--enable-loop-distribute".into(),
 //                "--iree-llvmcpu-tile-dispatch-using-forall".into(),
@@ -145,17 +151,16 @@ fn main() {
         .map_err(|e| format!("[IREE Model Compile] Failed to compile {}, {}", model_name, e))
         .unwrap();
 
-    let clang_path = PathBuf::from(std::env::var("CLANG_PATH").unwrap());
     let target = std::env::var("TARGET").unwrap();
+    let iree_path = std::env::var("IREE_PATH").unwrap();
+    let include_dir = PathBuf::from(iree_path + "/runtime/src"); 
     println!("cargo::warning= ariel ml target : {}", &target);
     #[cfg(feature= "emitc")]
     {
         let mut c_build = cc::Build::new();
-        let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file(model_name.to_string()  + "_emitc.c")
-               .compiler(&clang_path)
                .target(&target)
-               .include(include_dir)
+               .include(&include_dir)
                .define("EMITC_IMPLEMENTATION", None)
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1",
@@ -171,11 +176,9 @@ fn main() {
     {
         println!("cargo::rerun-if-changed=contrib/iree_workgroup_dispatch.c");
         let mut c_build = cc::Build::new();
-        let include_dir = "/media/zhaolan/Data-Big/TinyML/iree/runtime/src"; //should avoid hardcode
         c_build.file("contrib/iree_workgroup_dispatch.c")
-               .compiler(&clang_path)
                .target(&target)
-               .include(include_dir)
+               .include(&include_dir)
                .flags(vec![              
                 "-DIREE_PLATFORM_GENERIC=1", 
                 "-fno-stack-protector", 
