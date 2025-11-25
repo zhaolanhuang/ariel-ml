@@ -44,6 +44,7 @@ Installing the prerequisites
 
    * Update the `path` field in `laze-project.yml` to point to your cloned **Ariel OS** repository.
    * Update the Eerie package path in `Cargo.toml`.
+   * Update the `IREE_PATH` in `.cargo/config.toml` to point to the IREE repository. You may find it under `eerie/eerie-sys`, or you may use your own version.
 
 Once these steps are complete, your playground environment is ready for experimenting with ML models.
 
