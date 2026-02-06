@@ -11,7 +11,7 @@ use ariel_os::debug::{exit, log::info, println, ExitCode};
 use eerie::runtime;
 use eerie::runtime::base;
 use eerie::runtime::vm::ToRef;
-
+use alloc::format;
 mod static_library_loader;
 
 mod ptr_iree_lib_query_fn;
@@ -406,7 +406,19 @@ macro_rules! include_aligned {
 
 // use align_data::{include_aligned, Align64, Align16};
 use ariel_os::time;
-
+use ariel_os::{
+    cell::StaticCell,
+    reexports::embassy_usb,
+    usb::UsbDriver,
+    asynch::spawner,
+    time::{Instant, Timer},
+};
+use embassy_usb::{
+    class::cdc_acm::{CdcAcmClass, State},
+    driver::EndpointError,
+};
+use portable_atomic::{AtomicU64, Ordering};
+static sum_latency : AtomicU64 = AtomicU64::new(0);
 #[ariel_os::thread(autostart, stacksize = 16384, priority = 1)]
 fn main() {
     info!(
@@ -456,7 +468,8 @@ fn main() {
 
 //        #[cfg(feature = "quantized")]
 //        {
-            static MODEL_BYTECODE: &[u8] = include_aligned!(16, "../lenet5_quantized.vmfb");
+//            static MODEL_BYTECODE: &[u8] = include_aligned!(16, "../lenet5_quantized.vmfb");
+              static MODEL_BYTECODE: [u8; 1] = [0; 1]; 
 //        }
 
 //        #[cfg(not(feature = "quantized"))]
@@ -470,11 +483,80 @@ fn main() {
         let time_end_us = time::Instant::now().as_micros();
         output.iter().for_each(|x| info!("output:{}", x));
         info!("LeNet 5 inference time: {:?} us", time_end_us - time_begin_us);
-        print_ops_latency();
+        sum_latency.store(print_ops_latency(), Ordering::Relaxed); 
     }
    
     exit(ExitCode::SUCCESS);
 }
 
 
+const MAX_FULL_SPEED_PACKET_SIZE: u8 = 64;
 
+#[ariel_os::config(usb)]
+const USB_CONFIG: embassy_usb::Config<'_> = {
+    let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
+    config.manufacturer = Some(ariel_os::buildinfo::OS_NAME);
+    config.product = Some("USB serial example");
+    config.serial_number = Some("12345678");
+    config.max_power = 100;
+    config.max_packet_size_0 = MAX_FULL_SPEED_PACKET_SIZE;
+
+    // Required for Windows support.
+    config.composite_with_iads = true;
+    config.device_class = 0xEF;
+    config.device_sub_class = 0x02;
+    config.device_protocol = 0x01;
+    config
+};
+
+#[ariel_os::task(autostart, usb_builder_hook)]
+async fn usb_main() {
+    info!("Hello USB World!");
+
+    static STATE: StaticCell<State<'_>> = StaticCell::new();
+
+    // Create and inject the USB class on the system USB builder.
+    let mut class = USB_BUILDER_HOOK
+        .with(|builder| {
+            CdcAcmClass::new(
+                builder,
+                STATE.init_with(State::new),
+                MAX_FULL_SPEED_PACKET_SIZE.into(),
+            )
+        })
+        .await;
+
+    // Do stuff with the class!
+    loop {
+        class.wait_connection().await;
+        info!("Connected");
+//        let data = "Hallo Connected to Usb ACM!";
+//        class.write_packet(data).await?;
+        let _ = echo(&mut class).await;
+        info!("Disconnected");
+    }
+}
+
+struct Disconnected {}
+
+impl From<EndpointError> for Disconnected {
+    fn from(val: EndpointError) -> Self {
+        match val {
+            EndpointError::BufferOverflow => panic!("Buffer overflow"),
+            EndpointError::Disabled => Disconnected {},
+        }
+    }
+}
+
+async fn echo(class: &mut CdcAcmClass<'static, UsbDriver>) -> Result<(), Disconnected> {
+    let mut buf = [0; MAX_FULL_SPEED_PACKET_SIZE as usize];
+    loop {
+        let n = class.read_packet(&mut buf).await?;
+//        let data = &buf[..n];
+        let output = format!("sum latency: {}", sum_latency.load(Ordering::Relaxed));  
+        let data = output.as_str();
+//        info!("data: {}", Hex(data));
+        class.write_packet(data.as_bytes()).await?;
+       
+    }
+}

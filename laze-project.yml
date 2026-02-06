@@ -11,7 +11,8 @@ apps:
       # - log
       - cross-language-lto
       - sw/threading
-        #      - multi-core
+      - multi-core
+      - usb
 #    conflicts:
 #      - multi-core
 #    env:

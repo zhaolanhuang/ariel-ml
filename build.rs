@@ -18,8 +18,6 @@ fn main() {
 
     println!("cargo:warning=arch={} os={} env={}", arch, os, env);
 
-    // println!("cargo:rustc-env=IREE_LLD_BINARY=/usr/bin/lld");
-    // let IREE_LLD_BINARY = "/usr/bin/lld";  
 
     let context = std::env::var("CARGO_CFG_CONTEXT").unwrap();
 
@@ -50,7 +48,7 @@ fn main() {
                 format!("--iree-llvmcpu-target-triple={}", target),
                 format!("--iree-llvmcpu-target-cpu={}", target_cpu),
                 format!("--iree-llvmcpu-target-cpu-features={}", cpu_features),
-                "--iree-opt-level=O2".into(),
+//                "--iree-opt-level=O2".into(),
                 "--align-all-functions=4".into(),
                 "--align-all-blocks=4".into(),
 
@@ -62,8 +60,6 @@ fn main() {
                 // "--iree-llvmcpu-target-cpu=cortex-m4",
                 "--iree-vm-bytecode-module-strip-source-map=true".into(),
                 "--iree-vm-emit-polyglot-zip=false".into(),
-                // "--iree-llvmcpu-keep-linker-artifacts",
-
             ];
 
     

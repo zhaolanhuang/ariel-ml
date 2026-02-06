@@ -5,6 +5,7 @@ use ariel_os::debug::log::*;
 use ariel_os::thread::sync::Channel;
 use ariel_os::thread::sync::Mutex;
 use ariel_os::time;
+use ariel_os::thread::{CoreAffinity, CoreId};
 
 static WORK_QUEUE: Channel<Job> = Channel::new();
 
@@ -35,7 +36,7 @@ unsafe {
 }
 }
 
-pub fn print_ops_latency() {
+pub fn print_ops_latency() -> u64 {
 
 let mut sum_latency: u64 = 0;
 unsafe {
@@ -46,6 +47,7 @@ unsafe {
     }
 }
 info!("op latency sum [{:?}]", sum_latency);
+sum_latency
 //    unsafe {ops_latency.iter().for_each(|x| info!("op latency:{}", x));}
 }
 
@@ -91,12 +93,14 @@ extern "C" fn some_job(arg: usize) {
 //    defer_job(job.func, job.arg);
 //}
 
-#[ariel_os::thread(autostart, priority = 1)]
+//#[ariel_os::thread(autostart, priority = 1)]
+#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
 fn thread0() {
     worker();
 }
 
-#[ariel_os::thread(autostart, priority = 1)]
+//#[ariel_os::thread(autostart, priority = 1)]
+#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
 fn thread1() {
     worker();
 }
