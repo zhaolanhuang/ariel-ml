@@ -384,6 +384,158 @@ fn run_lenet5_float(vmfb: &[u8], a: &[f32]) -> Vec<f32> {
     out
 }
 
+#[cfg(all(feature = "mbv1_vww_96", feature = "static"))]
+fn run_mbv1_vww_96(vmfb: &[u8], a: &[u8]) -> Vec<f32> {
+    info!("mbv1_vww_96: use static library!");
+
+    let instance = runtime::api::Instance::new(
+        &runtime::api::InstanceOptions::new(&mut runtime::hal::DriverRegistry::new())
+            .use_all_available_drivers(),
+    )
+    .unwrap();
+    let f : sys::iree_hal_executable_library_query_fn_t = Some(ptr_iree_lib_query_fn::iree_lib_query_fn);
+    let libraries  = [f];
+    let device = static_library_loader::create_local_sync_device_with_static_loader(libraries.as_slice()).unwrap();
+    let session = runtime::api::Session::create_with_device(
+        &instance,
+        &runtime::api::SessionOptions::default(),
+        &device,
+    )
+    .unwrap();
+    info!("mbv1_vww_96: session creation successful!");
+    
+    #[cfg(not(feature = "emitc"))]
+    {
+        // info!("run_simple_mul, vmfb pointer: {:p}", vmfb.as_ptr());
+        info!("mbv1_vww_96: vmfb[0]: {:x}", vmfb[0]);
+        unsafe { session.append_module_from_memory(vmfb) }.unwrap();
+        info!("mbv1_vww_96: vmfb module append successful!");
+    }
+
+    #[cfg(feature = "emitc")]
+    {
+        let module = unsafe { module_create_emitc(&instance, &base::Allocator::get_global())}.unwrap();
+        unsafe { session.append_module(module.as_mut().unwrap()) }.unwrap();
+        info!("emitc module append successful!");
+    }
+
+    
+    let function = session.lookup_function("module.main").unwrap();
+    info!("function lookup successful!");
+    
+    let input_list =
+        runtime::vm::DynamicList::<runtime::vm::Ref<runtime::hal::BufferView<f32>>>::new(
+            1, &instance,
+        )
+        .unwrap();
+    let a_buf = runtime::hal::BufferView::<u8>::new(
+        &session,
+        &[1,96,96,3],
+        runtime::hal::EncodingType::DenseRowMajor,
+        a,
+    )
+    .unwrap();
+    let a_buf_ref = a_buf.to_ref(&instance).unwrap();
+    input_list.push_ref(&a_buf_ref).unwrap();
+
+    info!("finished input list!");
+
+    let output_list =
+        runtime::vm::DynamicList::<runtime::vm::Ref<runtime::hal::BufferView<f32>>>::new(
+            1, &instance,
+        )
+        .unwrap();
+    info!("ready for function invoke!");
+    let time_begin_us = time::Instant::now().as_micros();
+    function.invoke(&input_list, &output_list).unwrap();
+    let time_end_us = time::Instant::now().as_micros();
+    info!("func invoke time: {:?} us", time_end_us - time_begin_us);
+    info!("function invoke successful!");
+    let output_buffer_ref = output_list.get_ref(0).unwrap();
+    let output_buffer: BufferView<f32> = output_buffer_ref.to_buffer_view(&session);
+    let output_mapping = BufferMapping::new(output_buffer).unwrap();
+    let out = output_mapping.data().to_vec();
+    out
+}
+
+
+#[cfg(all(feature = "mcunet_10fps_vww", feature = "static"))]
+fn run_mcunet_10fps_vww(vmfb: &[u8], a: &[u8]) -> Vec<u8> {
+    info!("mcunet_10fps_vww: use static library!");
+
+    let instance = runtime::api::Instance::new(
+        &runtime::api::InstanceOptions::new(&mut runtime::hal::DriverRegistry::new())
+            .use_all_available_drivers(),
+    )
+    .unwrap();
+    let f : sys::iree_hal_executable_library_query_fn_t = Some(ptr_iree_lib_query_fn::iree_lib_query_fn);
+    let libraries  = [f];
+    let device = static_library_loader::create_local_sync_device_with_static_loader(libraries.as_slice()).unwrap();
+    let session = runtime::api::Session::create_with_device(
+        &instance,
+        &runtime::api::SessionOptions::default(),
+        &device,
+    )
+    .unwrap();
+    info!("mcunet_10fps_vww: session creation successful!");
+    
+    #[cfg(not(feature = "emitc"))]
+    {
+        // info!("run_simple_mul, vmfb pointer: {:p}", vmfb.as_ptr());
+        info!("mcunet_10fps_vww: vmfb[0]: {:x}", vmfb[0]);
+        unsafe { session.append_module_from_memory(vmfb) }.unwrap();
+        info!("mcunet_10fps_vww: vmfb module append successful!");
+    }
+
+    #[cfg(feature = "emitc")]
+    {
+        let module = unsafe { module_create_emitc(&instance, &base::Allocator::get_global())}.unwrap();
+        unsafe { session.append_module(module.as_mut().unwrap()) }.unwrap();
+        info!("emitc module append successful!");
+    }
+
+    
+    let function = session.lookup_function("module.main").unwrap();
+    info!("function lookup successful!");
+    
+    let input_list =
+        runtime::vm::DynamicList::<runtime::vm::Ref<runtime::hal::BufferView<u8>>>::new(
+            1, &instance,
+        )
+        .unwrap();
+    let a_buf = runtime::hal::BufferView::<u8>::new(
+        &session,
+        &[1,64,64,3],
+        runtime::hal::EncodingType::DenseRowMajor,
+        a,
+    )
+    .unwrap();
+    let a_buf_ref = a_buf.to_ref(&instance).unwrap();
+    input_list.push_ref(&a_buf_ref).unwrap();
+
+    info!("finished input list!");
+
+    let output_list =
+        runtime::vm::DynamicList::<runtime::vm::Ref<runtime::hal::BufferView<u8>>>::new(
+            1, &instance,
+        )
+        .unwrap();
+    info!("ready for function invoke!");
+    let time_begin_us = time::Instant::now().as_micros();
+    function.invoke(&input_list, &output_list).unwrap();
+    let time_end_us = time::Instant::now().as_micros();
+    info!("func invoke time: {:?} us", time_end_us - time_begin_us);
+    info!("function invoke successful!");
+    let output_buffer_ref = output_list.get_ref(0).unwrap();
+    let output_buffer: BufferView<u8> = output_buffer_ref.to_buffer_view(&session);
+    let output_mapping = BufferMapping::new(output_buffer).unwrap();
+    let out = output_mapping.data().to_vec();
+    out
+}
+
+
+
+
 // // !! Flatcc requires aligned with 16 bytes !!
 // /// Include a file as a `static` array with custom alignment
 // /// Usage: include_aligned!("path/to/file", 16)  => aligned to 16 bytes
@@ -419,7 +571,8 @@ use embassy_usb::{
 };
 use portable_atomic::{AtomicU64, Ordering};
 static sum_latency : AtomicU64 = AtomicU64::new(0);
-#[ariel_os::thread(autostart, stacksize = 16384, priority = 1)]
+
+#[ariel_os::thread(autostart, stacksize = 28384, priority = 1)]
 fn main() {
     info!(
         "Hello from main()! Running on a {} board.",
@@ -485,7 +638,36 @@ fn main() {
         info!("LeNet 5 inference time: {:?} us", time_end_us - time_begin_us);
         sum_latency.store(print_ops_latency(), Ordering::Relaxed); 
     }
+  
+    #[cfg(feature = "mbv1_vww_96")]
+    {
+        info!("Selected model: mbv1_vww_96.");
+        let image_bin: [u8; 96*96*3] = [1; 96*96*3];
+
+        static MODEL_BYTECODE: [u8 ; 1] = [0 ; 1];
+
+        let time_begin_us = time::Instant::now().as_micros();
+        let output = run_mbv1_vww_96(&MODEL_BYTECODE, &image_bin);
+        let time_end_us = time::Instant::now().as_micros();
+        output.iter().for_each(|x| info!("output:{}", x));
+        info!("mbv1_vww_96 inference time: {:?} us", time_end_us - time_begin_us);
+    }
+ 
+    #[cfg(feature = "mcunet_10fps_vww")]
+    {
+        info!("Selected model: mcunet_10fps_vww.");
+        let image_bin: [u8; 64*64*3] = [1; 64*64*3];
+
+        static MODEL_BYTECODE: [u8 ; 1] = [0 ; 1];
+
+        let time_begin_us = time::Instant::now().as_micros();
+        let output = run_mcunet_10fps_vww(&MODEL_BYTECODE, &image_bin);
+        let time_end_us = time::Instant::now().as_micros();
+        output.iter().for_each(|x| info!("output:{}", x));
+        info!("mbv1_vww_96 inference time: {:?} us", time_end_us - time_begin_us);
+    }
    
+    print_ops_latency();
     exit(ExitCode::SUCCESS);
 }
 

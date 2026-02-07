@@ -51,7 +51,8 @@ fn main() {
 //                "--iree-opt-level=O2".into(),
                 "--align-all-functions=4".into(),
                 "--align-all-blocks=4".into(),
-
+                "--iree-llvmcpu-stack-allocation-limit=4096".into(),
+                "--iree-stream-partitioning-favor=min-peak-memory".into(),
 //                "--iree-stream-partitioning-favor=max-concurrency".into(),
 //                "--enable-loop-distribute".into(),
 //                "--iree-llvmcpu-tile-dispatch-using-forall".into(),
@@ -100,6 +101,27 @@ fn main() {
         query_fn_name = "lenet5_quantized_linked_library_query";
         
     }
+
+    #[cfg(feature = "mbv1_vww_96")]
+    {
+        #[cfg(feature = "quantized")] 
+        {
+            model_name = "mbv1_vww_96_int8"
+        }
+        query_fn_name = "mbv1_vww_96_int8_linked_library_query";
+    }
+
+    #[cfg(feature = "mcunet_10fps_vww")]
+    {
+        #[cfg(feature = "quantized")] 
+        {
+            model_name = "mcunet_10fps_vww"
+        }
+        query_fn_name = "mcunet_10fps_vww_linked_library_query";
+        //query_fn_name = "module_linked_library_query";
+    }
+
+
     println!("cargo:rustc-env=IREE_LIB_QUERY_FN_NAME={}", query_fn_name);
     
 
@@ -122,8 +144,8 @@ fn main() {
     }
     
     iree_compile_flags.push("--dump-compilation-phases-to=build/iree".into());
-    iree_compile_flags.push("--iree-hal-dump-executable-files-to=build/iree".into());
-    iree_compile_flags.push("--mlir-pretty-debuginfo".into());
+//    iree_compile_flags.push("--iree-hal-dump-executable-files-to=build/iree".into());
+//    iree_compile_flags.push("--mlir-pretty-debuginfo".into());
 //    iree_compile_flags.push("--debug-only=isel".into());
 //    iree_compile_flags.push("--mlir-print-ir-after-all".into());
 //    iree_compile_flags.push("--mlir-print-ir-tree-dir=build/iree".into());
@@ -140,7 +162,7 @@ fn main() {
         "-o".into(), model_name.to_string()  + "_emitc.c",
     ]);
     
-
+    println!("iree compile flags: {:?}", iree_compile_flags);
     std::process::Command::new("iree-compile")
         .args(iree_compile_flags)
         .status()

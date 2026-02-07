@@ -5,4 +5,4 @@ include = "../build/imports/ariel-os/ariel-os-cargo.toml"
 config-include = true
 
 [env]
-IREE_PATH = "../iree"
+IREE_PATH = "/home/zhaolan/iree"

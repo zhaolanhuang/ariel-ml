@@ -15,7 +15,7 @@ static JOB_REMAINING: AtomicUsize = AtomicUsize::new(0);
 
 static OP_LATENCY_SUM: AtomicUsize = AtomicUsize::new(0);
 
-pub static mut ops_latency : [u64; 16] = [0;16];
+pub static mut ops_latency : [u64; 64] = [0;64];
 
 static mut op_idx: usize = 0;
 
