@@ -572,6 +572,19 @@ use embassy_usb::{
 use portable_atomic::{AtomicU64, Ordering};
 static sum_latency : AtomicU64 = AtomicU64::new(0);
 
+use ariel_os::{
+    cell::StaticCell,
+    reexports::embassy_usb,
+    usb::UsbDriver,
+    asynch::spawner,
+    time::{Instant, Timer},
+};
+use embassy_usb::{
+    class::cdc_acm::{CdcAcmClass, State},
+    driver::EndpointError,
+};
+use portable_atomic::{AtomicU64, Ordering};
+static sum_latency : AtomicU64 = AtomicU64::new(0);
 #[ariel_os::thread(autostart, stacksize = 28384, priority = 1)]
 fn main() {
     info!(
@@ -665,6 +678,7 @@ fn main() {
         let time_end_us = time::Instant::now().as_micros();
         output.iter().for_each(|x| info!("output:{}", x));
         info!("mbv1_vww_96 inference time: {:?} us", time_end_us - time_begin_us);
+        sum_latency.store(print_ops_latency(), Ordering::Relaxed); 
     }
    
     print_ops_latency();

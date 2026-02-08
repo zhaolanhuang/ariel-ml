@@ -93,14 +93,14 @@ extern "C" fn some_job(arg: usize) {
 //    defer_job(job.func, job.arg);
 //}
 
-//#[ariel_os::thread(autostart, priority = 1)]
-#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
+#[ariel_os::thread(autostart, priority = 1)]
+//#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
 fn thread0() {
     worker();
 }
 
-//#[ariel_os::thread(autostart, priority = 1)]
-#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
+#[ariel_os::thread(autostart, priority = 1)]
+//#[ariel_os::thread(autostart, affinity = CoreAffinity::one(CoreId::new(0)), priority = 1)]
 fn thread1() {
     worker();
 }
